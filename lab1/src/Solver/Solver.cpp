@@ -42,15 +42,8 @@ Solver &Solver::expand() {
 
     matrix.resize(m + n, n);
 
-    /*linalg::vector<int> col(m + n, 0);
-    linalg::vector_range vr(col, linalg::range(0, m));
-    vr = -values;
-
-    linalg::column(matrix, n) = col;*/
-
     linalg::matrix_range sub_matrix(matrix, linalg::range(m, m + n), linalg::range(0, n ));
     sub_matrix = linalg::identity_matrix<int>(n);
-
 
     return *this;
 }
@@ -58,7 +51,7 @@ Solver &Solver::expand() {
 Solver &Solver::convert() {
     auto m = matrix.size1();
     auto n = matrix.size2();
-    // size_t i = 0;
+
     for (size_t i = 0; i < matrix.size1() - matrix.size2(); ++i) {
         linalg::matrix_range sub_matrix(matrix, linalg::range(i, matrix.size1()), linalg::range(i, matrix.size2()));
         linalg::matrix_row row(matrix, 0);
