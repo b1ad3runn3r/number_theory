@@ -1,5 +1,5 @@
 .vscode*
-.PVS-Studio*
+*.PVS-Studio*
 .idea*
 build*
 
