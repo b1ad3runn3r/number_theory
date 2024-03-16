@@ -70,13 +70,13 @@ Solver &Solver::convert() {
 Solver &Solver::solve() {
     linalg::matrix_column col(matrix, matrix.size2() - 1);
 
-    linalg::vector<int> b_exp = values;
-    b_exp.resize(matrix.size1());
-    b_exp *= -1;
+    linalg::vector<int> b = values;
+    b.resize(matrix.size1()); // automatically filled with zeroes
+    b *= -1;
 
     auto m = matrix.size1() - matrix.size2();
     for (size_t i = 0; i < m; ++i) {
-        auto a = b_exp[i];
+        auto a = b[i];
         auto q = matrix (i,i);
 
         if (q == 0 && a != 0) {
@@ -85,22 +85,22 @@ Solver &Solver::solve() {
 
         if (q != 0) {
             auto k = (a - a % q) / q;
-            b_exp += -k * linalg::column(matrix, i);
+            b += -k * linalg::column(matrix, i);
         }
     }
 
-    linalg::vector_range vrr(b_exp, linalg::range(0, m));
+    linalg::vector_range vrr(b, linalg::range(0, m));
     if (std::all_of(vrr.begin(), vrr.end(),
                     [](auto a){return a == 0;})) {
 
-        auto t = linalg::vector_range(b_exp, linalg::range(m, b_exp.size()));
-        if (std::all_of(t.begin(), t.end(), [](auto a){ return a == 0; })) {
-            linalg::vector<int> f(t.size(),0);
-            f[0] = 1;
-            general_solution.push_back(f);
+        auto b_part = linalg::vector_range(b, linalg::range(m, b.size()));
+        if (std::all_of(b_part.begin(), b_part.end(), [](auto a){ return a == 0; })) {
+            linalg::vector<int> vec(b_part.size(), 0);
+            vec[0] = 1;
+            general_solution.push_back(vec);
         }
 
-        partial_solution = t;
+        partial_solution = b_part;
         for (size_t i = m; i < matrix.size2(); ++i) {
             linalg::matrix_range mr(matrix, linalg::range(m, matrix.size1()), linalg::range(i, i + 1));
             general_solution.push_back(linalg::matrix_column(mr, 0));
