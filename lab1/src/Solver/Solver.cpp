@@ -40,13 +40,13 @@ Solver &Solver::expand() {
     auto m = matrix.size1();
     auto n = matrix.size2();
 
-    matrix.resize(m + n, n + 1);
+    matrix.resize(m + n, n);
 
-    linalg::vector<int> col(m + n, 0);
+    /*linalg::vector<int> col(m + n, 0);
     linalg::vector_range vr(col, linalg::range(0, m));
-    vr = values;
+    vr = -values;
 
-    linalg::column(matrix, n) = col;
+    linalg::column(matrix, n) = col;*/
 
     linalg::matrix_range sub_matrix(matrix, linalg::range(m, m + n), linalg::range(0, n ));
     sub_matrix = linalg::identity_matrix<int>(n);
@@ -58,14 +58,17 @@ Solver &Solver::expand() {
 Solver &Solver::convert() {
     auto m = matrix.size1();
     auto n = matrix.size2();
+    // size_t i = 0;
     for (size_t i = 0; i < matrix.size1() - matrix.size2(); ++i) {
         linalg::matrix_range sub_matrix(matrix, linalg::range(i, matrix.size1()), linalg::range(i, matrix.size2()));
         linalg::matrix_row row(matrix, 0);
         linalg::vector_range vr(row, linalg::range(1, row.size()));
+
         while (!std::all_of(vr.begin(), vr.end(), [](auto i) {return i == 0; })) {
             swap_min(sub_matrix);
             gcd(sub_matrix);
         }
+        ++i;
     }
 
     return *this;
@@ -73,13 +76,10 @@ Solver &Solver::convert() {
 
 Solver &Solver::solve() {
     linalg::matrix_column col(matrix, matrix.size2() - 1);
-    linalg::vector<int> b_exp(matrix.size1());
-    linalg::vector_range vr(col, linalg::range(0, matrix.size1() - matrix.size2() + 1));
-    vr = values;
-    vr *= -1;
-    for (size_t i = 0; i < matrix.size1(); ++i) {
-        b_exp[i] = vr[i];
-    }
+
+    linalg::vector<int> b_exp = values;
+    b_exp.resize(matrix.size1());
+    b_exp *= -1;
 
     auto m = matrix.size1() - matrix.size2();
     for (size_t i = 0; i < m; ++i) {
@@ -97,14 +97,17 @@ Solver &Solver::solve() {
     }
 
     linalg::vector_range vrr(b_exp, linalg::range(0, m));
-    if (std::all_of(vrr.begin(), vrr.end(), [](auto a){return a == 0;})) {
+    if (std::all_of(vrr.begin(), vrr.end(),
+                    [](auto a){return a == 0;})) {
+
         auto t = linalg::vector_range(b_exp, linalg::range(m, b_exp.size()));
         if (std::all_of(t.begin(), t.end(), [](auto a){ return a == 0; })) {
             linalg::vector<int> f(t.size(),0);
+            f[0] = 1;
             general_solution.push_back(f);
         }
 
-        // par = Some(t)
+        partial_solution = t;
         for (size_t i = m; i < matrix.size2(); ++i) {
             linalg::matrix_range mr(matrix, linalg::range(m, matrix.size1()), linalg::range(i, i + 1));
             general_solution.push_back(linalg::matrix_column(mr, 0));
